@@ -112,17 +112,7 @@ void loop() {
     auto now = Rtc.GetDateTime();
     auto temp = Rtc.GetTemperature();
 
-    auto time_str = get_time(now);
-    auto date_str = get_date(now);
-
-    lcd.setCursor(0, 0);
-    lcd.write(time_str.c_str());
-    lcd.setCursor(10, 0);
-    lcd.print(temp.AsFloatDegC(), 1);
-    lcd.write("\xDF" "C");
-
-    lcd.setCursor(0, 1);
-    lcd.write(date_str.c_str());
+    vypisCas(now, temp);
 
     if (aState == AlarmState::armed && now.Hour() == aHour && now.Minute() == aMinute) {
         Serial.println("Triggering");
@@ -138,7 +128,7 @@ void loop() {
     digitalWrite(bzbz, (aState == AlarmState::triggered));
 }
 
-String get_date(const RtcDateTime& dt) {
+String get_date(const RtcDateTime &dt) {
     char datestring[20];
 
     snprintf_P(datestring,
@@ -162,4 +152,18 @@ String get_time(const RtcDateTime &dt) {
         dt.Second()
     );
     return String(datestring);
+}
+
+void vypisCas(const RtcDateTime &now, const RtcTemperature &temp) {
+    auto time_str = get_time(now);
+    auto date_str = get_date(now);
+
+    lcd.setCursor(0, 0);
+    lcd.write(time_str.c_str());
+    lcd.setCursor(10, 0);
+    lcd.print(temp.AsFloatDegC(), 1);
+    lcd.write("\xDF" "C");
+
+    lcd.setCursor(0, 1);
+    lcd.write(date_str.c_str());
 }
