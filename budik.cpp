@@ -23,6 +23,9 @@ byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 const int bzbz = 5;  //PWM
+const int backlight = 3; // PWM
+
+int backlight_val = 255;
 
 void setup() {
     // put your setup code here, to run once:
@@ -92,6 +95,8 @@ void setup() {
 
 void loop() {
     // put your main code here, to run repeatedly:
+    analogWrite(backlight, 128);
+
     auto now = Rtc.GetDateTime();
     auto temp = Rtc.GetTemperature();
 
