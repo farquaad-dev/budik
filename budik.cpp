@@ -32,9 +32,23 @@ enum class AlarmState {
     disarmed
 };
 
+enum class DisplayState {
+    time,
+    set_alarm,
+    set_password,
+    alarm
+};
+
 AlarmState aState = AlarmState::armed;
 int aHour = 14;
-int aMinute = 4;
+int aMinute = 40;
+
+DisplayState state = DisplayState::time;
+
+void setState(DisplayState newState) {
+    state = newState;
+    lcd.clear();
+}
 
 void setup() {
     // put your setup code here, to run once:
@@ -112,19 +126,26 @@ void loop() {
     auto now = Rtc.GetDateTime();
     auto temp = Rtc.GetTemperature();
 
-    vypisCas(now, temp);
-
+    // Check alarm
     if (aState == AlarmState::armed && now.Hour() == aHour && now.Minute() == aMinute) {
         Serial.println("Triggering");
         aState = AlarmState::triggered;
-    } else if (aState == AlarmState::triggered && key) {
-        Serial.println("Disarming");
-        aState = AlarmState::disarmed;
+        setState(DisplayState::alarm);
     } else if (aState == AlarmState::disarmed && (now.Hour() != aHour || now.Minute() != aMinute)) {
         Serial.println("Rearming");
         aState = AlarmState::armed;
     }
 
+    // Display stuff
+    if (state == DisplayState::time) {
+        vypisCas(now, temp);
+    } else if (state == DisplayState::alarm) {
+        vypisBudik(key, now);
+    } else if (state == DisplayState::set_alarm) {
+
+    } else if (state == DisplayState::set_password) {
+
+    }
     digitalWrite(bzbz, (aState == AlarmState::triggered));
 }
 
@@ -141,16 +162,27 @@ String get_date(const RtcDateTime &dt) {
     return String(datestring);
 }
 
-String get_time(const RtcDateTime &dt) {
+String get_time(const RtcDateTime &dt, bool sec=true) {
     char datestring[20];
+    if (sec) {
+        snprintf_P(
+            datestring,
+            countof(datestring),
+            PSTR("%02u:%02u:%02u"),
+            dt.Hour(),
+            dt.Minute(),
+            dt.Second()
+        );
+    } else {
+        snprintf_P(
+            datestring,
+            countof(datestring),
+            PSTR("%02u:%02u"),
+            dt.Hour(),
+            dt.Minute()
+        );
+    }
 
-    snprintf_P(datestring,
-        countof(datestring),
-        PSTR("%02u:%02u:%02u"),
-        dt.Hour(),
-        dt.Minute(),
-        dt.Second()
-    );
     return String(datestring);
 }
 
@@ -166,4 +198,18 @@ void vypisCas(const RtcDateTime &now, const RtcTemperature &temp) {
 
     lcd.setCursor(0, 1);
     lcd.write(date_str.c_str());
+}
+
+void vypisBudik(char key, const RtcDateTime &now) {
+    auto time_str = get_time(now, false);
+
+    lcd.setCursor(0, 0);
+    lcd.write("Budik!");
+    lcd.setCursor(11, 0);
+    lcd.write(time_str.c_str());
+
+    if (key) {
+        setState(DisplayState::time);
+        aState = AlarmState::disarmed;
+    }
 }
