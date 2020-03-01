@@ -25,7 +25,16 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 const int bzbz = 5;  //PWM
 const int backlight = 3; // PWM
 
-int backlight_val = 255;
+enum class AlarmState {
+    disabled,
+    armed,
+    triggered,
+    disarmed
+};
+
+AlarmState aState = AlarmState::armed;
+int aHour = 14;
+int aMinute = 4;
 
 void setup() {
     // put your setup code here, to run once:
@@ -91,10 +100,13 @@ void setup() {
 
     // LCD Display
     lcd.begin(16, 2);
+
+    pinMode(bzbz, OUTPUT);
 }
 
 void loop() {
     // put your main code here, to run repeatedly:
+    char key = keypad.getKey();
     analogWrite(backlight, 128);
 
     auto now = Rtc.GetDateTime();
@@ -111,6 +123,19 @@ void loop() {
 
     lcd.setCursor(0, 1);
     lcd.write(date_str.c_str());
+
+    if (aState == AlarmState::armed && now.Hour() == aHour && now.Minute() == aMinute) {
+        Serial.println("Triggering");
+        aState = AlarmState::triggered;
+    } else if (aState == AlarmState::triggered && key) {
+        Serial.println("Disarming");
+        aState = AlarmState::disarmed;
+    } else if (aState == AlarmState::disarmed && (now.Hour() != aHour || now.Minute() != aMinute)) {
+        Serial.println("Rearming");
+        aState = AlarmState::armed;
+    }
+
+    digitalWrite(bzbz, (aState == AlarmState::triggered));
 }
 
 String get_date(const RtcDateTime& dt) {
