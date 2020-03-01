@@ -40,8 +40,11 @@ enum class DisplayState {
 };
 
 AlarmState aState = AlarmState::armed;
-int aHour = 14;
-int aMinute = 40;
+int aHour = 15;
+int aMinute = 12;
+
+String password = "AD0";
+String napisane = "";
 
 DisplayState state = DisplayState::time;
 
@@ -204,12 +207,23 @@ void vypisBudik(char key, const RtcDateTime &now) {
     auto time_str = get_time(now, false);
 
     lcd.setCursor(0, 0);
-    lcd.write("Budik!");
+    lcd.write("Password:");
     lcd.setCursor(11, 0);
     lcd.write(time_str.c_str());
 
-    if (key) {
-        setState(DisplayState::time);
-        aState = AlarmState::disarmed;
+    if (key == '#') {
+        if (password == napisane) {
+            setState(DisplayState::time);
+            aState = AlarmState::disarmed;
+        } else {
+            lcd.clear();
+        }
+        napisane = "";
+
+    } else if (key) {
+        napisane += key;
     }
+
+    lcd.setCursor(0, 1);
+    lcd.write(napisane.c_str());
 }
