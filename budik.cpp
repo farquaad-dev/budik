@@ -102,7 +102,7 @@ void loop() {
     lcd.write(time_str.c_str());
     lcd.setCursor(10, 0);
     lcd.print(temp.AsFloatDegC(), 1);
-    lcd.write("\xDF" "C"));
+    lcd.write("\xDF" "C");
 
     lcd.setCursor(0, 1);
     lcd.write(date_str.c_str());
@@ -114,8 +114,8 @@ String get_date(const RtcDateTime& dt) {
     snprintf_P(datestring,
         countof(datestring),
         PSTR("%02u.%02u.%04u"),
-        dt.Month(),
         dt.Day(),
+        dt.Month(),
         dt.Year()
     );
     return String(datestring);
