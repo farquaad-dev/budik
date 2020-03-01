@@ -40,8 +40,8 @@ enum class DisplayState {
 };
 
 AlarmState aState = AlarmState::armed;
-int aHour = 15;
-int aMinute = 12;
+int aHour = 6;
+int aMinute = 0;
 
 String password = "AD0";
 String napisane = "";
@@ -141,11 +141,11 @@ void loop() {
 
     // Display stuff
     if (state == DisplayState::time) {
-        vypisCas(now, temp);
+        vypisCas(key, now, temp);
     } else if (state == DisplayState::alarm) {
         vypisBudik(key, now);
     } else if (state == DisplayState::set_alarm) {
-
+        nastavBudik(key);
     } else if (state == DisplayState::set_password) {
 
     }
@@ -189,7 +189,13 @@ String get_time(const RtcDateTime &dt, bool sec=true) {
     return String(datestring);
 }
 
-void vypisCas(const RtcDateTime &now, const RtcTemperature &temp) {
+String getPaddedNumber(int num) {
+    char buff[3];
+    snprintf_P(buff, 3, PSTR("%02u"), num);
+    return String(buff);
+}
+
+void vypisCas(char key, const RtcDateTime &now, const RtcTemperature &temp) {
     auto time_str = get_time(now);
     auto date_str = get_date(now);
 
@@ -201,6 +207,10 @@ void vypisCas(const RtcDateTime &now, const RtcTemperature &temp) {
 
     lcd.setCursor(0, 1);
     lcd.write(date_str.c_str());
+
+    if (key == 'A') {
+        setState(DisplayState::set_alarm);
+    }
 }
 
 void vypisBudik(char key, const RtcDateTime &now) {
@@ -226,4 +236,55 @@ void vypisBudik(char key, const RtcDateTime &now) {
 
     lcd.setCursor(0, 1);
     lcd.write(napisane.c_str());
+}
+
+void nastavBudik(char key) {
+    static String hour = getPaddedNumber(aHour);
+    static String minute = getPaddedNumber(aMinute);
+    static int index = 0;
+
+    lcd.setCursor(0, 0);
+    lcd.write("Alarm: ");
+    lcd.write(hour.c_str());
+    lcd.write(":");
+    lcd.write(minute.c_str());
+
+    // Dvojbodka fix
+    auto ii = 7 + index;
+    if (ii >= 9) {
+        ii++;
+    }
+
+    lcd.setCursor(7, 1);
+    lcd.write("     ");
+    lcd.setCursor(ii, 1);
+    lcd.write("^");
+
+    if (key == 'A') {
+        int xH = hour.toInt();
+        int xM = minute.toInt();
+
+        if (xH >= 0 && xH <= 23 && xM >= 0 && xM <= 59) {
+            aHour = xH;
+            aMinute = xM;
+            setState(DisplayState::time);
+        } else {
+            lcd.clear();
+            lcd.home();
+            lcd.write("Incorrect time!");
+            delay(1000);
+            setState(DisplayState::set_alarm);
+        }
+    } else if ('0' <= key && key <= '9') {
+        if (index < 2) {
+            hour.setCharAt(index, key);
+        } else if (index < 4) {
+            minute.setCharAt(index-2, key);
+        }
+        index++;
+
+        if (index >= 4) {
+            index = 0;
+        }
+    }
 }
