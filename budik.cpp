@@ -147,7 +147,7 @@ void loop() {
     } else if (state == DisplayState::set_alarm) {
         nastavBudik(key);
     } else if (state == DisplayState::set_password) {
-
+        nastavHeslo(key);
     }
     digitalWrite(bzbz, (aState == AlarmState::triggered));
 }
@@ -210,6 +210,9 @@ void vypisCas(char key, const RtcDateTime &now, const RtcTemperature &temp) {
 
     if (key == 'A') {
         setState(DisplayState::set_alarm);
+    } else if (key == 'B'){
+        password = "";
+        setState(DisplayState::set_password);
     }
 }
 
@@ -260,19 +263,17 @@ void nastavBudik(char key) {
     lcd.setCursor(ii, 1);
     lcd.write("^");
 
-    if (key == 'A') {
+    if (key == '#') {
         int xH = hour.toInt();
         int xM = minute.toInt();
 
         if (xH >= 0 && xH <= 23 && xM >= 0 && xM <= 59) {
             aHour = xH;
             aMinute = xM;
+            vypisInfo("Time set!");
             setState(DisplayState::time);
         } else {
-            lcd.clear();
-            lcd.home();
-            lcd.write("Incorrect time!");
-            delay(1000);
+            vypisInfo("Incorrect time!");
             setState(DisplayState::set_alarm);
         }
     } else if ('0' <= key && key <= '9') {
@@ -287,4 +288,26 @@ void nastavBudik(char key) {
             index = 0;
         }
     }
+}
+
+void nastavHeslo(char key) {
+    lcd.setCursor(0, 0);
+    lcd.write("Password:");
+
+    if (key == '#') {
+        vypisInfo("Password set!");
+        setState(DisplayState::time);
+    } else if (key) {
+        password += key;
+    }
+
+    lcd.setCursor(0, 1);
+    lcd.write(password.c_str());
+}
+
+void vypisInfo(const char *message) {
+    lcd.clear();
+    lcd.home();
+    lcd.write(message);
+    delay(1000);
 }
